@@ -13,8 +13,11 @@ fn ff() {
 }
 fn main() {
     let a = A{t: 1};
+    let c = || {};
 
     a.f();
 
     ff();
+
+    c();
 }

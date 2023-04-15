@@ -15,5 +15,13 @@ pub enum Commands {
 
         #[clap(long = "out-dir")]
         out_dir: PathBuf,
+    },
+
+    MetricBenchmarkSuit {
+        #[clap(long)]
+        target: PathBuf,
+
+        #[clap(long = "out-dir")]
+        out_dir: PathBuf,
     }
 } 

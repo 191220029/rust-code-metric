@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 
-use xlsxwriter::Workbook;
+use xlsxwriter::{Workbook, Worksheet};
 
 pub mod code_type;
+pub mod parse_rs;
 
 pub struct Collector {
     // code_elements: Vec<CodeType>
@@ -19,6 +20,9 @@ pub struct Collector {
     pub field_access: u32,
     pub loops: u32,
     pub genrics: u32,
+    pub closure_def: u32,
+    // pub closure_call: u32,
+    pub dyn_use: u32,
     pub lines: u128,
     pub files: u32,
 }
@@ -26,7 +30,11 @@ pub struct Collector {
 impl Collector {
     pub fn new() -> Self {
         // Collector { code_elements: vec![] }
-        Collector { function_def: 0, method_def: 0, function_call: 0, method_call: 0, struct_def: 0, trait_def: 0, macro_def: 0, macro_use: 0, lines: 0, files: 0, match_block: 0, ref_op: 0, field_access: 0, loops: 0, genrics: 0 }
+        Collector { 
+            function_def: 0, method_def: 0, function_call: 0, method_call: 0, 
+            struct_def: 0, trait_def: 0, macro_def: 0, macro_use: 0, lines: 0, 
+            files: 0, match_block: 0, ref_op: 0, field_access: 0, loops: 0, 
+            genrics: 0, closure_def: 0, dyn_use: 0, }
     }
 
     // pub fn append(&mut self, code: CodeType) {
@@ -41,7 +49,7 @@ impl Collector {
     //     unimplemented!()
     // }
 
-    pub fn to_xls(&self, out_path: &PathBuf) {
+    pub fn to_xls_file(&self, out_path: &PathBuf) {
         let workbook = match Workbook::new(out_path.to_str().unwrap()) {
             Ok(wb) => wb,
             Err(e) => {
@@ -72,23 +80,52 @@ impl Collector {
         sheet.write_string(0, 12, "reference", None).unwrap();
         sheet.write_string(0, 13, "loops", None).unwrap();
         sheet.write_string(0, 14, "generics", None).unwrap();
+        sheet.write_string(0, 15, "closure_def", None).unwrap();
+        // sheet.write_string(0, 16, "closure_call", None).unwrap();
+        sheet.write_string(0, 16, "dyn_use", None).unwrap();
 
-        sheet.write_string(1, 0, self.files.to_string().as_str(), None).unwrap();
-        sheet.write_string(1, 1, self.lines.to_string().as_str(), None).unwrap();
-        sheet.write_string(1, 2, self.function_def.to_string().as_str(), None).unwrap();
-        sheet.write_string(1, 3, self.function_call.to_string().as_str(), None).unwrap();
-        sheet.write_string(1, 4, self.method_def.to_string().as_str(), None).unwrap();
-        sheet.write_string(1, 5, self.method_call.to_string().as_str(), None).unwrap();
-        sheet.write_string(1, 6, self.macro_def.to_string().as_str(), None).unwrap();
-        sheet.write_string(1, 7, self.macro_use.to_string().as_str(), None).unwrap();
-        sheet.write_string(1, 8, self.struct_def.to_string().as_str(), None).unwrap();
-        sheet.write_string(1, 9, self.field_access.to_string().as_str(), None).unwrap();
-        sheet.write_string(1, 10, self.trait_def.to_string().as_str(), None).unwrap();
-        sheet.write_string(1, 11, self.match_block.to_string().as_str(), None).unwrap();
-        sheet.write_string(1, 12, self.ref_op.to_string().as_str(), None).unwrap();
-        sheet.write_string(1, 13, self.loops.to_string().as_str(), None).unwrap();
-        sheet.write_string(1, 14, self.genrics.to_string().as_str(), None).unwrap();
+        self.write_to_sheet(&mut sheet, 1, 0);
+
+        // sheet.write_string(1, 0, self.files.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 1, self.lines.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 2, self.function_def.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 3, self.function_call.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 4, self.method_def.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 5, self.method_call.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 6, self.macro_def.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 7, self.macro_use.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 8, self.struct_def.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 9, self.field_access.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 10, self.trait_def.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 11, self.match_block.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 12, self.ref_op.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 13, self.loops.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 14, self.genrics.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 15, self.closure_def.to_string().as_str(), None).unwrap();
+        // // sheet.write_string(1, 16, self.closure_call.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 16, self.dyn_use.to_string().as_str(), None).unwrap();
 
         // unimplemented!()
+    }
+
+    pub fn write_to_sheet(&self, sheet: &mut Worksheet, row: u32, start_col: u16) {
+        sheet.write_string(row, start_col + 0, self.files.to_string().as_str(), None).unwrap();
+        sheet.write_string(row, start_col + 1, self.lines.to_string().as_str(), None).unwrap();
+        sheet.write_string(row, start_col + 2, self.function_def.to_string().as_str(), None).unwrap();
+        sheet.write_string(row, start_col + 3, self.function_call.to_string().as_str(), None).unwrap();
+        sheet.write_string(row, start_col + 4, self.method_def.to_string().as_str(), None).unwrap();
+        sheet.write_string(row, start_col + 5, self.method_call.to_string().as_str(), None).unwrap();
+        sheet.write_string(row, start_col + 6, self.macro_def.to_string().as_str(), None).unwrap();
+        sheet.write_string(row, start_col + 7, self.macro_use.to_string().as_str(), None).unwrap();
+        sheet.write_string(row, start_col + 8, self.struct_def.to_string().as_str(), None).unwrap();
+        sheet.write_string(row, start_col + 9, self.field_access.to_string().as_str(), None).unwrap();
+        sheet.write_string(row, start_col + 10, self.trait_def.to_string().as_str(), None).unwrap();
+        sheet.write_string(row, start_col + 11, self.match_block.to_string().as_str(), None).unwrap();
+        sheet.write_string(row, start_col + 12, self.ref_op.to_string().as_str(), None).unwrap();
+        sheet.write_string(row, start_col + 13, self.loops.to_string().as_str(), None).unwrap();
+        sheet.write_string(row, start_col + 14, self.genrics.to_string().as_str(), None).unwrap();
+        sheet.write_string(row, start_col + 15, self.closure_def.to_string().as_str(), None).unwrap();
+        // sheet.write_string(1, 16, self.closure_call.to_string().as_str(), None).unwrap();
+        sheet.write_string(row, start_col + 16, self.dyn_use.to_string().as_str(), None).unwrap();
     }
 }
