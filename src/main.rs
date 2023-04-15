@@ -13,10 +13,9 @@ fn main() {
         command::Commands::MetricDefault { target, out_dir } => {
             let mut collector = Collector::new();
             match iter_directory_recursively(&target, &mut collector) {
-                Ok(_) => collector.to_xls(&out_dir.join("code_metric.xls")),
+                Ok(_) => collector.to_xls(&out_dir.join("code_metric.xlsx")),
                 Err(e) => eprintln!("{}", e),
             }
-            
         }
     }
 }
