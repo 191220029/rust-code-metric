@@ -208,7 +208,7 @@ fn bfs_syntax_tree(cursor: &mut TreeCursor, collector: &mut Collector, src: &Str
              | "==" | "<" | ">" | "->" | "#" | "[" | "]" | "true" | "false"
              | "||" | "+" | "!=" | "..=" | "<<" | "'" | "-" | "<=" | ">="
              | "/" | "%" | "^" | "|=" | ">>" | "/=" | "*=" | "<<=" | "&="
-             | ">>=" | "^=" => 
+             | ">>=" | "^=" | "%=" => 
                 (),
             "fn" =>
                 (),
@@ -230,7 +230,7 @@ fn bfs_syntax_tree(cursor: &mut TreeCursor, collector: &mut Collector, src: &Str
                 (),
             "in" => 
                 (),
-            "visibility_modifier" | "pub" =>
+            "visibility_modifier" | "pub" | "vis" =>
                 (),
             "self" => 
                 (),
